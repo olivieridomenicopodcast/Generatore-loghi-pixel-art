@@ -27,8 +27,8 @@ h1{font-family:var(--disp);font-weight:900;letter-spacing:.12em;text-transform:u
 .icon-btn[aria-pressed="true"] path{fill:currentColor}
 .field{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
 .row{display:flex;gap:10px;align-items:stretch}
-#seed{flex:1;min-width:0;min-height:44px;padding:0 16px;border-radius:99px;background:var(--glass);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:16px}
-#seed:focus-visible{outline:none;border-color:var(--ac);box-shadow:0 0 18px -4px var(--ac)}
+#seed,#token{flex:1;min-width:0;min-height:44px;padding:0 16px;border-radius:99px;background:var(--glass);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:16px}
+#seed:focus-visible,#token:focus-visible{outline:none;border-color:var(--ac);box-shadow:0 0 18px -4px var(--ac)}
 .btn{font-family:var(--disp);font-weight:600;font-size:12px;letter-spacing:.18em;text-transform:uppercase;min-height:44px;padding:0 22px;border-radius:99px;color:#04060f;background:var(--ac);box-shadow:0 8px 40px -10px var(--ac);transition:transform .2s,box-shadow .3s,filter .2s}
 .btn:hover{transform:translateY(-2px);filter:brightness(1.12)}
 .btn:active{transform:scale(.97)}
@@ -47,6 +47,15 @@ h1{font-family:var(--disp);font-weight:900;letter-spacing:.12em;text-transform:u
 .dialog::backdrop{background:rgba(3,4,10,.7);backdrop-filter:blur(4px)}
 .dialog p{margin-bottom:20px;line-height:1.5;overflow-wrap:anywhere}
 .dialog .row{justify-content:flex-end}
+.dialog{max-height:90vh;max-height:90dvh;overflow:auto}
+.dlg-title{font-family:var(--disp);font-weight:600;font-size:15px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px}
+.dlg-title:focus{outline:none}
+.dialog .small{font-size:13px;line-height:1.5;margin-bottom:12px}
+.dialog .field{margin-bottom:8px}
+.stack{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.stack .btn,.stack input{width:100%}
+.msg{min-height:1.5em;font-size:14px}
+.msg.err{color:#ff8a8a}
 .btn.ghost{color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--line);box-shadow:none}
 .btn.ghost:hover{border-color:var(--ac);box-shadow:0 0 22px -8px var(--ac)}
 #toast{position:fixed;left:50%;top:max(70px,env(safe-area-inset-top));transform:translate(-50%,-20px);opacity:0;z-index:30;padding:11px 20px;border-radius:99px;background:rgba(10,14,30,.88);border:1px solid var(--ac);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:13px;letter-spacing:.06em;transition:.45s;pointer-events:none;box-shadow:0 0 30px -6px var(--ac);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}

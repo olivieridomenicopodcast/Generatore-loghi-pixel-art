@@ -1,5 +1,5 @@
 // Aumenta CACHE a ogni modifica ai file in cache.
-const CACHE = 'pixellogo-v4';
+const CACHE = 'pixellogo-v5';
 const FILES = [
   './', 'index.html', 'style.css', 'app.js', 'manifest.json',
   'icons/icon-192.png', 'icons/icon-512.png',
@@ -23,5 +23,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // Solo file dell'app: mai api.github.com né altre origini.
+  if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(caches.match(e.request).then(hit => hit || fetch(e.request)));
 });

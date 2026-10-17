@@ -15,6 +15,9 @@
 <body>
 <header class="top">
   <span class="brand"><i></i>PixelLogo</span>
+  <button id="syncOpen" class="icon-btn" type="button" aria-label="Sincronizzazione">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+  </button>
 </header>
 <main class="main">
   <h1>PixelLogo</h1>
@@ -36,6 +39,27 @@
     <ul id="favlist" class="favlist"></ul>
   </section>
 </main>
+<dialog id="sync" class="dialog">
+  <h2 class="dlg-title" tabindex="-1" autofocus>Sincronizzazione</h2>
+  <p class="dim small">I preferiti vanno su un Gist privato del tuo GitHub, solo quando premi tu. Un Gist «segreto» non compare negli elenchi, ma chi ha il link lo può leggere: qui dentro ci sono solo semi e nomi di loghi, niente di segreto.</p>
+  <label class="field" for="token">Token GitHub</label>
+  <div class="stack">
+    <input id="token" type="password" maxlength="255" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Incolla qui il token">
+    <button id="tokenSave" class="btn ghost" type="button">Salva token</button>
+    <button id="tokenRemove" class="btn ghost" type="button">Rimuovi token</button>
+  </div>
+  <p id="tokenState" class="dim small"></p>
+  <p class="dim small">Serve un token «classic» con il solo permesso gist (quelli «fine-grained» non funzionano con i Gist). Lo crei da GitHub › Settings › Developer settings › Personal access tokens. Resta solo su questo dispositivo. Se trapela, revocalo da GitHub.</p>
+  <div class="stack">
+    <button id="pull" class="btn ghost" type="button">Scarica dal Gist</button>
+    <button id="push" class="btn" type="button">Invia al Gist</button>
+  </div>
+  <p id="syncStatus" class="small"></p>
+  <p id="syncMsg" class="msg" role="status"></p>
+  <form method="dialog">
+    <button class="btn ghost" value="close">Chiudi</button>
+  </form>
+</dialog>
 <dialog id="confirm" class="dialog">
   <form method="dialog">
     <p id="confirmText"></p>

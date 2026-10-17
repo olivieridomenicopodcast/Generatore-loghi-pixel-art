@@ -151,6 +151,7 @@ function saveFavorites() {
   const doc = { version: 1, updatedAt: new Date().toISOString(), data: { favorites } };
   try {
     localStorage.setItem(FAV_KEY, JSON.stringify(doc));
+    updateSyncStatus();
     return true;
   } catch (e) {
     showToast('Il browser non mi lascia salvare: i preferiti non resteranno.');
@@ -184,16 +185,21 @@ function updateStar(seed) {
   favButton.setAttribute('aria-label', saved ? 'Togli dai preferiti' : 'Salva nei preferiti');
 }
 
-function askRemove(fav) {
+function askConfirm(text, okLabel, cancelLabel) {
   const dialog = document.getElementById('confirm');
-  document.getElementById('confirmText').textContent = 'Togliere «' + fav.name + '» dai preferiti?';
-  if (typeof dialog.showModal !== 'function') {
-    return Promise.resolve(window.confirm('Togliere «' + fav.name + '» dai preferiti?'));
-  }
+  if (typeof dialog.showModal !== 'function') return Promise.resolve(window.confirm(text));
+  document.getElementById('confirmText').textContent = text;
+  dialog.querySelector('button[value=ok]').textContent = okLabel;
+  dialog.querySelector('button[value=cancel]').textContent = cancelLabel;
+  dialog.returnValue = '';
   return new Promise(resolve => {
     dialog.addEventListener('close', () => resolve(dialog.returnValue === 'ok'), { once: true });
     dialog.showModal();
   });
+}
+
+function askRemove(fav) {
+  return askConfirm('Togliere «' + fav.name + '» dai preferiti?', 'Togli', 'Tienilo');
 }
 
 async function removeFavorite(fav) {
@@ -247,6 +253,290 @@ function renderFavorites() {
   }
 }
 
+// Sincronizzazione con un Gist privato, a mano (scarica / invia).
+const GIST_FILE = 'pixellogo.json';
+const GIST_DESCRIPTION = 'PixelLogo: preferiti';
+const TOKEN_KEY = 'pixellogo.token';
+const GIST_ID_KEY = 'pixellogo.gistId';
+const SYNC_KEY = 'pixellogo.sync';
+
+const syncDialog = document.getElementById('sync');
+const tokenInput = document.getElementById('token');
+const syncMsg = document.getElementById('syncMsg');
+let syncBusy = false;
+
+class SyncError extends Error {}
+
+function lsGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    return null;
+  }
+}
+
+function lsSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function lsRemove(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch (e) {
+    // niente da fare
+  }
+}
+
+function fingerprint(list) {
+  return JSON.stringify(list.map(f => [f.seed, f.name, f.savedAt]));
+}
+
+// Com'erano le cose all'ultimo scambio col Gist: data della versione remota, ora e impronta dei preferiti.
+function readSync() {
+  try {
+    const s = JSON.parse(lsGet(SYNC_KEY));
+    if (s && typeof s.remoteUpdatedAt === 'string' && typeof s.syncedAt === 'string' && typeof s.syncedHash === 'string') return s;
+  } catch (e) {
+    // come se non ci fosse
+  }
+  return null;
+}
+
+function writeSync(remoteUpdatedAt) {
+  lsSet(SYNC_KEY, JSON.stringify({ remoteUpdatedAt, syncedAt: new Date().toISOString(), syncedHash: fingerprint(favorites) }));
+  updateSyncStatus();
+}
+
+function isDirty() {
+  const sync = readSync();
+  return sync ? fingerprint(favorites) !== sync.syncedHash : favorites.length > 0;
+}
+
+function plural(n) {
+  return n === 1 ? '1 preferito' : n + ' preferiti';
+}
+
+function setMsg(text, isError) {
+  syncMsg.textContent = text;
+  syncMsg.classList.toggle('err', !!isError);
+}
+
+function updateSyncStatus() {
+  const hasToken = !!lsGet(TOKEN_KEY);
+  const sync = readSync();
+  document.getElementById('tokenState').textContent = hasToken ? 'Token salvato su questo dispositivo.' : 'Nessun token salvato.';
+  document.getElementById('tokenRemove').disabled = !hasToken || syncBusy;
+  let status;
+  if (isDirty()) status = 'Modifiche non inviate.';
+  else if (!sync) status = 'Mai sincronizzato.';
+  else status = 'Sincronizzato alle ' + new Date(sync.syncedAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + '.';
+  document.getElementById('syncStatus').textContent = status;
+}
+
+function setBusy(busy) {
+  syncBusy = busy;
+  for (const id of ['pull', 'push', 'tokenSave']) document.getElementById(id).disabled = busy;
+}
+
+// Chiamate a GitHub: errori in chiaro, mai il token nei messaggi.
+async function github(path, init = {}) {
+  const token = lsGet(TOKEN_KEY);
+  if (!token) throw new SyncError('Manca il token: incollalo qui sopra e premi «Salva token».');
+  let res;
+  try {
+    res = await fetch('https://api.github.com' + path, {
+      ...init,
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: 'Bearer ' + token,
+        'X-GitHub-Api-Version': '2022-11-28',
+        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+      },
+    });
+  } catch (e) {
+    throw new SyncError('Nessuna connessione. Riprova quando sei online.');
+  }
+  if (res.status === 401) throw new SyncError('Token non valido.');
+  if (res.status === 404) {
+    const err = new SyncError('Gist non trovato.');
+    err.notFound = true;
+    throw err;
+  }
+  if (!res.ok) throw new SyncError('Errore GitHub ' + res.status + '.');
+  return res.json();
+}
+
+async function findGist() {
+  for (let page = 1; page <= 10; page++) {
+    const list = await github('/gists?per_page=100&page=' + page);
+    const hit = list.find(g => g.files && g.files[GIST_FILE]);
+    if (hit) return hit;
+    if (list.length < 100) break;
+  }
+  return null;
+}
+
+async function readGist(id) {
+  const gist = await github('/gists/' + encodeURIComponent(id));
+  const file = gist.files && gist.files[GIST_FILE];
+  if (!file) throw new SyncError('Nel Gist non c\'è il file ' + GIST_FILE + '.');
+  let content = file.content;
+  if (file.truncated) {
+    // Il file completo sta altrove: qui il token non si manda.
+    let res;
+    try {
+      res = await fetch(file.raw_url);
+    } catch (e) {
+      throw new SyncError('Nessuna connessione. Riprova quando sei online.');
+    }
+    if (!res.ok) throw new SyncError('Errore GitHub ' + res.status + '.');
+    content = await res.text();
+  }
+  return { updatedAt: gist.updated_at, content };
+}
+
+function parseRemote(content) {
+  let doc = null;
+  try {
+    doc = JSON.parse(content);
+  } catch (e) {
+    // gestito sotto
+  }
+  if (doc && typeof doc.version === 'number' && doc.version > 1) {
+    throw new SyncError('I dati nel Gist sono più nuovi di questa app: aggiorna l\'app prima di scaricare.');
+  }
+  if (doc && doc.version === 1 && doc.data && Array.isArray(doc.data.favorites) && doc.data.favorites.every(isValidFav)) {
+    return doc.data.favorites.filter((f, i, all) => all.findIndex(x => x.seed === f.seed) === i);
+  }
+  throw new SyncError('I dati nel Gist non sono leggibili: non ho toccato niente.');
+}
+
+async function pushToGist() {
+  let id = lsGet(GIST_ID_KEY);
+  if (!id) {
+    const found = await findGist();
+    if (found) id = found.id;
+  }
+  if (id) {
+    const gist = await github('/gists/' + encodeURIComponent(id));
+    const sync = readSync();
+    const unchanged = sync && sync.remoteUpdatedAt === gist.updated_at;
+    if (unchanged && !isDirty()) {
+      setMsg('Niente da inviare: è tutto aggiornato.');
+      return;
+    }
+    if (!unchanged) {
+      const ok = await askConfirm('Nel Gist ci sono modifiche che non hai scaricato su questo dispositivo. Le sovrascrivo con i tuoi preferiti?', 'Sovrascrivi', 'Lascia stare');
+      if (!ok) {
+        setMsg('Invio annullato. Non ho toccato niente.');
+        return;
+      }
+    }
+  }
+  const files = { [GIST_FILE]: { content: JSON.stringify({ version: 1, updatedAt: new Date().toISOString(), data: { favorites } }, null, 2) } };
+  const saved = id
+    ? await github('/gists/' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify({ files }) })
+    : await github('/gists', { method: 'POST', body: JSON.stringify({ description: GIST_DESCRIPTION, public: false, files }) });
+  lsSet(GIST_ID_KEY, saved.id);
+  writeSync(saved.updated_at);
+  setMsg('Inviati ' + plural(favorites.length) + '.');
+}
+
+async function pullFromGist() {
+  let id = lsGet(GIST_ID_KEY);
+  if (!id) {
+    const found = await findGist();
+    if (!found) {
+      setMsg('Non ho trovato nessun Gist di PixelLogo: prima invia i tuoi preferiti.');
+      return;
+    }
+    id = found.id;
+  }
+  const remote = await readGist(id);
+  const remoteFavs = parseRemote(remote.content);
+  const sync = readSync();
+  const dirty = isDirty();
+  if (sync && sync.remoteUpdatedAt === remote.updatedAt && !dirty) {
+    setMsg('Hai già tutto: niente da scaricare.');
+    return;
+  }
+  if (dirty && fingerprint(remoteFavs) !== fingerprint(favorites)) {
+    const ok = await askConfirm('Hai preferiti non ancora inviati: scaricando dal Gist li perdi. Continuo?', 'Scarica', 'Lascia stare');
+    if (!ok) {
+      setMsg('Scaricamento annullato. Non ho toccato niente.');
+      return;
+    }
+  }
+  const before = favorites;
+  favorites = remoteFavs;
+  if (!saveFavorites()) {
+    favorites = before;
+    throw new SyncError('Non sono riuscito a salvare i preferiti scaricati: non ho cambiato niente.');
+  }
+  lsSet(GIST_ID_KEY, id);
+  writeSync(remote.updatedAt);
+  renderFavorites();
+  updateStar(seedInput.value);
+  setMsg('Scaricati ' + plural(favorites.length) + '.');
+}
+
+async function runSync(action) {
+  if (syncBusy) return;
+  setBusy(true);
+  setMsg('Un attimo…');
+  try {
+    await action();
+  } catch (e) {
+    if (e instanceof SyncError && e.notFound && lsGet(GIST_ID_KEY)) {
+      lsRemove(GIST_ID_KEY);
+      lsRemove(SYNC_KEY);
+      setMsg('Gist non trovato: ho scollegato quello vecchio. Riprova e ne cerco o ne creo uno.', true);
+    } else if (e instanceof SyncError) {
+      setMsg(e.message, true);
+    } else {
+      setMsg('Qualcosa è andato storto: non ho toccato niente.', true);
+    }
+  } finally {
+    setBusy(false);
+    updateSyncStatus();
+  }
+}
+
+document.getElementById('syncOpen').addEventListener('click', () => {
+  setMsg('');
+  updateSyncStatus();
+  if (typeof syncDialog.showModal === 'function') syncDialog.showModal();
+});
+syncDialog.addEventListener('close', () => {
+  tokenInput.value = '';
+});
+document.getElementById('tokenSave').addEventListener('click', () => {
+  const token = tokenInput.value.trim();
+  if (!/^[\x21-\x7e]+$/.test(token)) {
+    setMsg('Il token non sembra valido: incolla solo il codice, senza spazi.', true);
+    return;
+  }
+  if (!lsSet(TOKEN_KEY, token)) {
+    setMsg('Il browser non mi lascia salvare il token.', true);
+    return;
+  }
+  tokenInput.value = '';
+  setMsg('Token salvato su questo dispositivo.');
+  updateSyncStatus();
+});
+document.getElementById('tokenRemove').addEventListener('click', () => {
+  lsRemove(TOKEN_KEY);
+  setMsg('Token rimosso.');
+  updateSyncStatus();
+});
+document.getElementById('push').addEventListener('click', () => runSync(pushToGist));
+document.getElementById('pull').addEventListener('click', () => runSync(pullFromGist));
+
 favButton.addEventListener('click', () => {
   const seed = seedInput.value;
   if (seed === '') return;
@@ -272,6 +562,7 @@ document.getElementById('gen').addEventListener('click', () => {
 seedInput.value = randomSeed();
 drawLogo(seedInput.value);
 renderFavorites();
+updateSyncStatus();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
