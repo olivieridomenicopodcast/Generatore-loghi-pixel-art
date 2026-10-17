@@ -1,13 +1,12 @@
-# [Nome della webapp]: istruzioni permanenti
+# PixelLogo: istruzioni permanenti
 
-> Modello di partenza. Quando crei una webapp da questo repo, compila le sezioni tra parentesi quadre
-> (1, 2, 7, 8) e lascia il resto. Il repo può essere pubblico: qui dentro non scrivere mai token, chiavi o dati di persone.
+> Il repo può essere pubblico: qui dentro non scrivere mai token, chiavi o dati di persone.
 
 ## 1. Cos'è
-[Cosa fa la webapp, per chi, dove gira (es. telefono, PWA installata). Chi decide e chi rivede le modifiche.]
+PixelLogo genera in modo procedurale loghi in pixel art, con nomi casuali ma sensati. La usa solo Niky, da PC e da telefono, come PWA installata. Le modifiche le decide e le rivede Niky.
 
 ## 2. Utenti e dati
-[Chi la usa. Dove stanno i dati: di norma `localStorage` sul dispositivo + sincronizzazione su un GitHub Gist privato con pull/push manuali.]
+La usa solo Niky, nessun login. Si salvano i loghi preferiti in `localStorage` sul dispositivo, sincronizzati su un GitHub Gist privato con pull/push manuali (skill `sync-gist`).
 
 ## 3. Come lavoriamo
 - Chi scrive le richieste non è uno sviluppatore di mestiere: spiega le scelte tecniche in parole semplici e segnala i rischi prima di agire, non dopo.
@@ -63,7 +62,11 @@ Per i primi tre, i dettagli e i valori sono nei file indicati: leggili prima di 
 Dev by Domenico "Niky" Olivieri in Vibe Coding.
 
 ## 7. Decisioni già prese: non rimetterle in discussione
-[Le scelte fatte una volta per tutte, es. «Nessun login», «Un solo calendario».]
+- Nessun login.
+- Il seme decide tutto: stesso seme, stesso logo (e stesso nome).
+- I loghi sono quadrati, 32x32 pixel.
+- Stile grafico: **Inventa** (`docs/STILE-INVENTA.md`). Solo tema scuro, senza interruttore chiaro/scuro: deroga alla regola della sezione 5, confermata da Niky.
+- Font da file locali copiati dal repo `Inventa` (cartella `fonts/`), mai da CDN.
 
 ## 8. Fuori dal perimetro
-[Cosa la webapp non fa e dove si fa.]
+Nessun limite stabilito per ora. Se ne emergono, si scrivono qui.

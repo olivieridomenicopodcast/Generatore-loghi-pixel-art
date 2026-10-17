@@ -1,0 +1,20 @@
+/* PixelLogo · stile Inventa (docs/STILE-INVENTA.md), solo tema scuro */
+:root{
+  --bg:#03040a; --ink:#e9efff; --dim:#8f9bbd; --ac:#35d0ff;
+  --glass:rgba(14,18,36,.62); --line:rgba(255,255,255,.12);
+  --disp:'Unbounded','Space Grotesk',system-ui,sans-serif;
+  --body:'Space Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{min-height:100vh;background:var(--bg);color:var(--ink);font-family:var(--body);overflow-x:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.top{position:fixed;left:0;right:0;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:max(14px,env(safe-area-inset-top)) clamp(14px,3vw,36px) 12px;background:linear-gradient(180deg,rgba(3,4,10,.85),transparent)}
+.brand{font-family:var(--disp);font-weight:900;letter-spacing:.32em;font-size:13px;display:flex;gap:10px;align-items:center;color:var(--ink)}
+.brand i{width:9px;height:9px;border-radius:50%;background:var(--ac);box-shadow:0 0 14px 2px var(--ac);display:inline-block;animation:beat 1.6s infinite}
+@keyframes beat{50%{transform:scale(.55);opacity:.5}}
+.main{max-width:720px;margin:0 auto;padding:96px 16px 32px}
+h1{font-family:var(--disp);font-weight:900;letter-spacing:.12em;text-transform:uppercase;font-size:clamp(24px,6vw,40px);margin-bottom:16px}
+.dim{color:var(--dim);font-weight:300;line-height:1.6}
+#toast{position:fixed;left:50%;top:max(70px,env(safe-area-inset-top));transform:translate(-50%,-20px);opacity:0;z-index:30;padding:11px 20px;border-radius:99px;background:rgba(10,14,30,.88);border:1px solid var(--ac);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:13px;letter-spacing:.06em;transition:.45s;pointer-events:none;box-shadow:0 0 30px -6px var(--ac);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+#toast.show{opacity:1;transform:translate(-50%,0)}
