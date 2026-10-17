@@ -1,5 +1,5 @@
 // Aumenta CACHE a ogni modifica ai file in cache.
-const CACHE = 'pixellogo-v5';
+const CACHE = 'pixellogo-v6';
 const FILES = [
   './', 'index.html', 'style.css', 'app.js', 'manifest.json',
   'icons/icon-192.png', 'icons/icon-512.png',
