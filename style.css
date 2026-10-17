@@ -16,5 +16,15 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .main{max-width:720px;margin:0 auto;padding:96px 16px 32px}
 h1{font-family:var(--disp);font-weight:900;letter-spacing:.12em;text-transform:uppercase;font-size:clamp(24px,6vw,40px);margin-bottom:16px}
 .dim{color:var(--dim);font-weight:300;line-height:1.6}
+.logo{display:block;width:min(86vw,384px);aspect-ratio:1;margin:8px 0 24px;image-rendering:pixelated;background:var(--glass);border:1px solid var(--line);border-radius:26px;padding:12px}
+.field{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.row{display:flex;gap:10px;align-items:stretch}
+#seed{flex:1;min-width:0;min-height:44px;padding:0 16px;border-radius:99px;background:var(--glass);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:16px}
+#seed:focus-visible{outline:none;border-color:var(--ac);box-shadow:0 0 18px -4px var(--ac)}
+.btn{font-family:var(--disp);font-weight:600;font-size:12px;letter-spacing:.18em;text-transform:uppercase;min-height:44px;padding:0 22px;border-radius:99px;color:#04060f;background:var(--ac);box-shadow:0 8px 40px -10px var(--ac);transition:transform .2s,box-shadow .3s,filter .2s}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.12)}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.hint{margin-top:16px;font-size:14px}
 #toast{position:fixed;left:50%;top:max(70px,env(safe-area-inset-top));transform:translate(-50%,-20px);opacity:0;z-index:30;padding:11px 20px;border-radius:99px;background:rgba(10,14,30,.88);border:1px solid var(--ac);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:13px;letter-spacing:.06em;transition:.45s;pointer-events:none;box-shadow:0 0 30px -6px var(--ac);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.show{opacity:1;transform:translate(-50%,0)}

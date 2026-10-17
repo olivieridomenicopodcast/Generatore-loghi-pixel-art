@@ -18,7 +18,13 @@
 </header>
 <main class="main">
   <h1>PixelLogo</h1>
-  <p class="dim">Qui nasceranno i loghi. Per ora c'è solo l'impalcatura: il resto arriva con la prima modifica.</p>
+  <canvas id="logo" class="logo" width="32" height="32" role="img" aria-label="Logo generato dal seme"></canvas>
+  <label class="field" for="seed">Seme</label>
+  <div class="row">
+    <input id="seed" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button id="gen" class="btn" type="button">Genera</button>
+  </div>
+  <p class="dim hint">Stesso seme, stesso logo. Scrivine uno tuo oppure lascia fare al bottone.</p>
 </main>
 <div id="toast" role="status" aria-live="polite"></div>
 <script src="app.js"></script>
