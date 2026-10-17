@@ -19,14 +19,32 @@
 <main class="main">
   <h1>PixelLogo</h1>
   <canvas id="logo" class="logo" width="32" height="32" role="img" aria-label="Logo generato dal seme"></canvas>
-  <p id="name" class="name"></p>
+  <div class="namebar">
+    <p id="name" class="name"></p>
+    <button id="fav" class="icon-btn" type="button" aria-pressed="false" aria-label="Salva nei preferiti">
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 2.8l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.7l-5.9 3.1 1.2-6.5L2.5 9.7l6.6-.9z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
   <label class="field" for="seed">Seme</label>
   <div class="row">
     <input id="seed" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false">
     <button id="gen" class="btn" type="button">Genera</button>
   </div>
   <p class="dim hint">Stesso seme, stesso logo. Scrivine uno tuo oppure lascia fare al bottone.</p>
+  <section id="favs" class="favs" hidden>
+    <h2 class="field">Preferiti</h2>
+    <ul id="favlist" class="favlist"></ul>
+  </section>
 </main>
+<dialog id="confirm" class="dialog">
+  <form method="dialog">
+    <p id="confirmText"></p>
+    <div class="row">
+      <button class="btn ghost" value="cancel">Tienilo</button>
+      <button class="btn" value="ok">Togli</button>
+    </div>
+  </form>
+</dialog>
 <div id="toast" role="status" aria-live="polite"></div>
 <script src="app.js"></script>
 </body>

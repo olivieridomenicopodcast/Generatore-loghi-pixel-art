@@ -66,15 +66,19 @@ function logoPixels(seed) {
   return px;
 }
 
-function drawLogo(seed) {
-  document.getElementById('name').textContent = logoName(seed);
-  const canvas = document.getElementById('logo');
+function paintLogo(canvas, seed) {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, SIZE, SIZE);
   for (const [x, y, color] of logoPixels(seed)) {
     ctx.fillStyle = color;
     ctx.fillRect(x, y, 1, 1);
   }
+}
+
+function drawLogo(seed) {
+  document.getElementById('name').textContent = logoName(seed);
+  paintLogo(document.getElementById('logo'), seed);
+  updateStar(seed);
 }
 
 // Nomi: «Sostantivo Aggettivo», con l'aggettivo concordato nel genere.
@@ -111,7 +115,154 @@ function randomSeed() {
   return Math.random().toString(36).slice(2, 8);
 }
 
+// Preferiti: in localStorage, nello stesso formato che userà la sincronizzazione col Gist.
+const FAV_KEY = 'pixellogo.preferiti';
+const FAV_BACKUP_KEY = 'pixellogo.preferiti.backup';
+
+function isValidFav(f) {
+  return f && typeof f.seed === 'string' && typeof f.name === 'string' && typeof f.savedAt === 'string';
+}
+
+function loadFavorites() {
+  let raw = null;
+  try {
+    raw = localStorage.getItem(FAV_KEY);
+  } catch (e) {
+    return [];
+  }
+  if (raw === null) return [];
+  try {
+    const doc = JSON.parse(raw);
+    if (doc && doc.version === 1 && doc.data && Array.isArray(doc.data.favorites) && doc.data.favorites.every(isValidFav)) {
+      return doc.data.favorites;
+    }
+  } catch (e) {
+    // dati illeggibili: si passa al backup qui sotto
+  }
+  try {
+    localStorage.setItem(FAV_BACKUP_KEY, raw);
+  } catch (e) {
+    // niente da fare: si riparte da una lista vuota
+  }
+  return [];
+}
+
+function saveFavorites() {
+  const doc = { version: 1, updatedAt: new Date().toISOString(), data: { favorites } };
+  try {
+    localStorage.setItem(FAV_KEY, JSON.stringify(doc));
+    return true;
+  } catch (e) {
+    showToast('Il browser non mi lascia salvare: i preferiti non resteranno.');
+    return false;
+  }
+}
+
+let favorites = loadFavorites();
+let toastTimer = null;
+
+function showToast(text) {
+  const toast = document.getElementById('toast');
+  toast.textContent = text;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+}
+
+function findFavorite(seed) {
+  return favorites.find(f => f.seed === seed);
+}
+
 const seedInput = document.getElementById('seed');
+const favButton = document.getElementById('fav');
+
+function updateStar(seed) {
+  const saved = !!findFavorite(seed);
+  favButton.disabled = seed === '';
+  favButton.title = seed === '' ? 'Scrivi un seme per salvarlo' : '';
+  favButton.setAttribute('aria-pressed', String(saved));
+  favButton.setAttribute('aria-label', saved ? 'Togli dai preferiti' : 'Salva nei preferiti');
+}
+
+function askRemove(fav) {
+  const dialog = document.getElementById('confirm');
+  document.getElementById('confirmText').textContent = 'Togliere «' + fav.name + '» dai preferiti?';
+  if (typeof dialog.showModal !== 'function') {
+    return Promise.resolve(window.confirm('Togliere «' + fav.name + '» dai preferiti?'));
+  }
+  return new Promise(resolve => {
+    dialog.addEventListener('close', () => resolve(dialog.returnValue === 'ok'), { once: true });
+    dialog.showModal();
+  });
+}
+
+async function removeFavorite(fav) {
+  if (!(await askRemove(fav))) return;
+  const before = favorites;
+  favorites = favorites.filter(f => f.seed !== fav.seed);
+  if (!saveFavorites()) favorites = before;
+  else showToast('Tolto dai preferiti.');
+  renderFavorites();
+  updateStar(seedInput.value);
+}
+
+function renderFavorites() {
+  const list = document.getElementById('favlist');
+  list.replaceChildren();
+  document.getElementById('favs').hidden = favorites.length === 0;
+  for (const fav of favorites) {
+    const li = document.createElement('li');
+    li.className = 'fav';
+
+    const open = document.createElement('button');
+    open.type = 'button';
+    open.className = 'fav-open';
+    open.setAttribute('aria-label', 'Apri ' + fav.name + ', seme ' + fav.seed);
+    const canvas = document.createElement('canvas');
+    canvas.width = SIZE;
+    canvas.height = SIZE;
+    paintLogo(canvas, fav.seed);
+    open.appendChild(canvas);
+    open.addEventListener('click', () => {
+      seedInput.value = fav.seed;
+      drawLogo(fav.seed);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    const foot = document.createElement('div');
+    foot.className = 'fav-foot';
+    const label = document.createElement('span');
+    label.className = 'fav-name';
+    label.textContent = fav.name;
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'icon-btn';
+    remove.setAttribute('aria-label', 'Togli ' + fav.name + ' dai preferiti');
+    remove.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    remove.addEventListener('click', () => removeFavorite(fav));
+    foot.append(label, remove);
+
+    li.append(open, foot);
+    list.appendChild(li);
+  }
+}
+
+favButton.addEventListener('click', () => {
+  const seed = seedInput.value;
+  if (seed === '') return;
+  const existing = findFavorite(seed);
+  if (existing) {
+    removeFavorite(existing);
+    return;
+  }
+  const before = favorites;
+  favorites = [{ seed, name: logoName(seed), savedAt: new Date().toISOString() }, ...favorites];
+  if (!saveFavorites()) favorites = before;
+  else showToast('Salvato nei preferiti.');
+  renderFavorites();
+  updateStar(seed);
+});
+
 seedInput.addEventListener('input', () => drawLogo(seedInput.value));
 document.getElementById('gen').addEventListener('click', () => {
   seedInput.value = randomSeed();
@@ -120,6 +271,7 @@ document.getElementById('gen').addEventListener('click', () => {
 
 seedInput.value = randomSeed();
 drawLogo(seedInput.value);
+renderFavorites();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
