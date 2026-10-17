@@ -67,6 +67,7 @@ function logoPixels(seed) {
 }
 
 function drawLogo(seed) {
+  document.getElementById('name').textContent = logoName(seed);
   const canvas = document.getElementById('logo');
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, SIZE, SIZE);
@@ -74,6 +75,36 @@ function drawLogo(seed) {
     ctx.fillStyle = color;
     ctx.fillRect(x, y, 1, 1);
   }
+}
+
+// Nomi: «Sostantivo Aggettivo», con l'aggettivo concordato nel genere.
+// Sequenza casuale separata da quella del logo, così il disegno non cambia.
+const NOUNS = [
+  ['Gufo', 'm'], ['Pinguino', 'm'], ['Tostapane', 'm'], ['Cactus', 'm'], ['Drago', 'm'],
+  ['Granchio', 'm'], ['Fungo', 'm'], ['Razzo', 'm'], ['Biscotto', 'm'], ['Castello', 'm'],
+  ['Polpo', 'm'], ['Ombrello', 'm'], ['Gatto', 'm'], ['Robot', 'm'], ['Faro', 'm'],
+  ['Luna', 'f'], ['Pizza', 'f'], ['Lumaca', 'f'], ['Volpe', 'f'], ['Nuvola', 'f'],
+  ['Medusa', 'f'], ['Torre', 'f'], ['Fabbrica', 'f'], ['Stella', 'f'], ['Chitarra', 'f'],
+  ['Rana', 'f'], ['Cometa', 'f'], ['Valigia', 'f'], ['Zucca', 'f'], ['Bussola', 'f'],
+];
+
+// [maschile, femminile]
+const ADJECTIVES = [
+  ['Elettrico', 'Elettrica'], ['Cosmico', 'Cosmica'], ['Sospetto', 'Sospetta'], ['Storto', 'Storta'],
+  ['Pigro', 'Pigra'], ['Furioso', 'Furiosa'], ['Segreto', 'Segreta'], ['Dorato', 'Dorata'],
+  ['Magnetico', 'Magnetica'], ['Nebbioso', 'Nebbiosa'], ['Veloce', 'Veloce'], ['Gentile', 'Gentile'],
+  ['Spaziale', 'Spaziale'], ['Rumoroso', 'Rumorosa'], ['Tascabile', 'Tascabile'], ['Metallico', 'Metallica'],
+  ['Ribelle', 'Ribelle'], ['Notturno', 'Notturna'], ['Curioso', 'Curiosa'], ['Instabile', 'Instabile'],
+  ['Fortunato', 'Fortunata'], ['Lucente', 'Lucente'], ['Elegante', 'Elegante'], ['Selvaggio', 'Selvaggia'],
+  ['Strano', 'Strana'], ['Vulcanico', 'Vulcanica'], ['Cremoso', 'Cremosa'], ['Brillante', 'Brillante'],
+  ['Solitario', 'Solitaria'], ['Imprevedibile', 'Imprevedibile'],
+];
+
+function logoName(seed) {
+  const rng = makeRng(seed + '|nome');
+  const [noun, gender] = NOUNS[Math.floor(rng() * NOUNS.length)];
+  const adj = ADJECTIVES[Math.floor(rng() * ADJECTIVES.length)][gender === 'm' ? 0 : 1];
+  return noun + ' ' + adj;
 }
 
 function randomSeed() {
